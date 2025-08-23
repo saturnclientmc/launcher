@@ -27,6 +27,8 @@ fn download(version: &str) {
     let game_path = path!(&base_path, "minecraft");
     let jre_path = path!(&base_path, "jre");
 
+    println!("Downloading {version}");
+
     match smallauncher_lib::download::download_minecraft_version(&game_path, &jre_path, &version) {
         Ok(_) => println!("Download completed!"),
         Err(e) => println!("Download failed: {:?}", e),
