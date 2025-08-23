@@ -3,9 +3,28 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Play, Settings, User } from "lucide-react";
-import { authenticate, launchMinecraft } from "./lib/launcher";
+import { authenticate, launchMinecraft, listAccounts } from "./lib/launcher";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useEffect, useState } from "react";
 
 export default function App() {
+  const [version, setVersion] = useState("1.21.4");
+  const [accounts, setAccounts] = useState<string[]>([]);
+  const [account, setAccount] = useState<string | undefined>();
+
+  useEffect(() => {
+    listAccounts().then((a) => {
+      setAccounts(a);
+      setAccount(a[0]);
+    });
+  });
+
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-6">
       <Card className="w-[480px] shadow-2xl rounded-2xl border border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
@@ -24,9 +43,18 @@ export default function App() {
 
             <TabsContent value="play" className="space-y-4">
               <div className="flex flex-col items-center gap-4">
-                <Button
+                <Select defaultValue="1.21.4" onValueChange={setVersion}>
+                  <SelectTrigger className="w-[180px w-full">
+                    <SelectValue placeholder="Version" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1.21.4">1.21.4</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button disabled={!account}
                   onClick={() => {
-                    launchMinecraft('Amgxy', '1.21.4');
+                    if (!account) return;
+                    launchMinecraft(account, version);
                   }}
                   className="w-full font-bold text-lg flex items-center gap-2"
                 ><Play /> Launch</Button>
@@ -34,6 +62,16 @@ export default function App() {
             </TabsContent>
 
             <TabsContent value="auth" className="space-y-4">
+              <Select defaultValue={account}>
+                <SelectTrigger className="w-[180px w-full">
+                  <SelectValue placeholder="Select an account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem value={a}>{a}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button
                 onClick={() => {
                   authenticate();

@@ -70,6 +70,56 @@ fn launch_minecraft(username: &str, version: &str) {
     }
 }
 
+#[tauri::command]
+fn list_versions() {
+    let base_path = env::get_data_folder().expect("error get folder game");
+    let game_path = path!(&base_path, "minecraft");
+    match smallauncher_lib::launch::list_versions(&game_path) {
+        Ok(list) => {
+            if !list.is_empty() {
+                for version in list {
+                    println!("{version}");
+                }
+            } else {
+                println!("No installed versions found.");
+            }
+        }
+        Err(smallauncher_lib::error::Error::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => {
+            println!("No installed versions found. The versions directory does not exist.");
+        }
+        Err(e) => println!("Error listing versions: {:?}", e),
+    }
+}
+
+#[tauri::command]
+fn list_accounts() -> Vec<String> {
+    let base_path = env::get_data_folder().expect("error get folder game");
+    let auth_path = path!(&base_path, "auth");
+
+    match std::fs::read_dir(auth_path) {
+        Ok(dir) => dir
+            .filter_map(|entry| {
+                entry.ok().and_then(|e| {
+                    let path = e.path();
+                    if path.is_file() {
+                        if let Some(f) = e.file_name().into_string().ok() {
+                            Some(f.trim_end_matches(".json").to_string())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect(),
+        Err(e) => {
+            println!("Error listing accounts: {:?}", e);
+            Vec::new()
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -78,7 +128,9 @@ pub fn run() {
             authenticate,
             download,
             check_version,
-            launch_minecraft
+            launch_minecraft,
+            list_versions,
+            list_accounts,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
