@@ -1,30 +1,11 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Play, Settings, User } from "lucide-react";
+import { invoke } from '@tauri-apps/api/core';
 
 export default function App() {
-  const [progress, setProgress] = useState(0);
-  const [launching, setLaunching] = useState(false);
-
-  const handleLaunch = () => {
-    setLaunching(true);
-    setProgress(0);
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setLaunching(false);
-          return 100;
-        }
-        return prev + 5;
-      });
-    }, 200);
-  };
-
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-6">
       <Card className="w-[480px] shadow-2xl rounded-2xl border border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
@@ -44,21 +25,12 @@ export default function App() {
             {/* Play Tab */}
             <TabsContent value="play" className="space-y-4">
               <div className="flex flex-col items-center gap-4">
-                {!launching ? (
-                  <Button
-                    onClick={handleLaunch}
-                    className="w-full font-bold text-lg flex items-center gap-2"
-                  >
-                    <Play className="w-5 h-5" /> LAUNCH
-                  </Button>
-                ) : (
-                  <div className="w-full space-y-2">
-                    <Progress value={progress} />
-                    <p className="text-sm text-zinc-400 text-center">
-                      Downloading assets... {progress}%
-                    </p>
-                  </div>
-                )}
+                <Button
+                  onClick={() => {
+                    invoke('authenticate')
+                  }}
+                  className="w-full font-bold text-lg flex items-center gap-2"
+                >Auth</Button>
               </div>
             </TabsContent>
 
