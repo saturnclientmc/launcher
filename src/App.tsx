@@ -26,7 +26,7 @@ export default function App() {
   });
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-6">
+    <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-6 bg-center bg-cover" style={{ backgroundImage: "url('/boliviainteligente-ry7YdbD5gIA-unsplash.jpg')" }}>
       <Card className="w-[480px] shadow-2xl rounded-2xl border border-zinc-700 bg-zinc-900/80 backdrop-blur-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-white">
