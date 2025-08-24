@@ -1912,9 +1912,9 @@ checksum = "8eaf4bc02d17cbdd7ff4c7438cafcdf7fb9a4613313ad11b4f8fefe7d3fa0130"
 
 [[package]]
 name = "jobserver"
-version = "0.1.33"
+version = "0.1.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38f262f097c174adebe41eb73d66ae9c06b2844fb0da69969647bbddd9b0538a"
+checksum = "9afb3de4395d6b3e67a780b6de64b51c978ecf11cb9a462c66be7d4ca9039d33"
 dependencies = [
  "getrandom 0.3.3",
  "libc",
@@ -3268,11 +3268,31 @@ dependencies = [
 
 [[package]]
 name = "saturn-launcher"
-version = "0.1.0"
+version = "0.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04de217dd60acb7ecc80dde0dd093aa0bb90d0ed2d3c62099fc4f1246a43bda3"
 dependencies = [
+ "hex",
+ "log",
+ "md5",
+ "oauth2",
+ "open",
  "serde",
  "serde_json",
- "smallauncher_lib",
+ "sha1",
+ "ureq",
+ "uuid",
+ "walkdir",
+ "zip",
+]
+
+[[package]]
+name = "saturn-launcher-app"
+version = "0.1.0"
+dependencies = [
+ "saturn-launcher",
+ "serde",
+ "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
@@ -3591,25 +3611,6 @@ name = "slab"
 version = "0.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a2ae44ef20feb57a68b23d846850f861394c2e02dc425a50098ae8c90267589"
-
-[[package]]
-name = "smallauncher_lib"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb1e378566b18d3c6bdf3abde36a666f24e6b6071004b3eb1b765f8b220c4dda"
-dependencies = [
- "hex",
- "log",
- "md5",
- "oauth2",
- "open",
- "serde",
- "serde_json",
- "sha1",
- "ureq",
- "uuid",
- "zip",
-]
 
 [[package]]
 name = "smallvec"

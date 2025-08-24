@@ -3,17 +3,22 @@ Resources:
     - https://tauri.app/develop/calling-rust/
 */
 
-use smallauncher_lib::path;
+const FABRIC_API: &str =
+    "https://cdn.modrinth.com/data/P7dR8mSH/versions/p96k10UR/fabric-api-0.119.4%2B1.21.4.jar";
+const LATEST_CLIENT: &str = "https://github.com/saturnclientmc/saturnclient/releases/download/0.0.4-beta2/saturnclient-0.0.4-beta2.jar";
+const CLIENT_JAR: &str = "saturnclient-0.0.4-beta2.jar";
+
+use std::fs;
 
 pub mod env;
 
 #[tauri::command]
 fn authenticate() {
     let base_path = env::get_data_folder().expect("error get folder game");
-    let auth_path = path!(&base_path, "auth");
+    let auth_path = base_path.join("auth");
 
-    match smallauncher_lib::auth::auth_microsoft() {
-        Ok(auth) => match smallauncher_lib::auth::save(&auth_path, &auth) {
+    match saturn_launcher::auth::auth_microsoft() {
+        Ok(auth) => match saturn_launcher::auth::save(&auth_path, &auth) {
             Ok(_) => println!("Authentication successful."),
             Err(e) => println!("Failed to save authentication: {:?}", e),
         },
@@ -23,24 +28,41 @@ fn authenticate() {
 
 #[tauri::command]
 fn download(version: &str) {
-    let base_path = env::get_data_folder().expect("error get folder game");
-    let game_path = path!(&base_path, "minecraft");
-    let jre_path = path!(&base_path, "jre");
-
     println!("Downloading {version}");
+    saturn_launcher::download_version("1.21.4");
+    println!("Downloaded {version}");
+    println!("Installing fabric for {version}");
+    saturn_launcher::install_fabric(version, "0.17.2");
+    println!("Fabric installed for {version}");
 
-    match smallauncher_lib::download::download_minecraft_version(&game_path, &jre_path, &version) {
-        Ok(_) => println!("Download completed!"),
-        Err(e) => println!("Download failed: {:?}", e),
+    println!("Installing Saturn Client for {version}");
+    let base_path = env::get_data_folder().unwrap();
+    let mods_path = base_path.join("instances").join(version).join("mods");
+    if !mods_path.exists() {
+        fs::create_dir_all(&mods_path).unwrap();
+    }
+    let saturn_jar = mods_path.join(CLIENT_JAR);
+    {
+        let mut saturn_file = fs::File::create(saturn_jar).unwrap();
+        saturn_launcher::download::download(LATEST_CLIENT, &mut saturn_file).unwrap();
+        println!("Saturn Client Installed for {version}");
+    }
+
+    let fabric_api_jar = mods_path.join("fabric-api.jar");
+    {
+        let mut fabric_file = fs::File::create(fabric_api_jar).unwrap();
+        saturn_launcher::download::download(FABRIC_API, &mut fabric_file).unwrap();
+        println!("Saturn Client Installed for {version}");
     }
 }
 
 #[tauri::command]
 fn check_version(version: &str) {
-    let base_path = env::get_data_folder().expect("error get folder game");
-    let game_path = path!(&base_path, "minecraft");
+    let base_path = env::get_data_folder().unwrap();
+    let instances_path = base_path.join("instances");
+    let instance = instances_path.join(version);
 
-    if smallauncher_lib::launch::check_version_integrity(&game_path, &version) {
+    if saturn_launcher::launch::check_version_integrity(&instance, &format!("{version}-fabric")) {
         println!("Version {version} is ok");
     } else {
         println!("Version {version} is not ok");
@@ -49,52 +71,42 @@ fn check_version(version: &str) {
 
 #[tauri::command]
 fn launch_minecraft(username: &str, version: &str) {
-    let base_path = env::get_data_folder().expect("error get folder game");
-    let auth_path = path!(&base_path, "auth");
-    let game_path = path!(&base_path, "minecraft");
-    let jre_path = path!(&base_path, "jre");
+    let base_path = env::get_data_folder().unwrap();
+    let auth_path = base_path.join("auth");
+    let jre_path = base_path.join("jre");
+    let instances_path = base_path.join("instances");
+    let instance = instances_path.join(version);
 
-    let auth = match smallauncher_lib::auth::load(&auth_path, &username) {
+    let auth = match saturn_launcher::auth::load(&auth_path, &username) {
         Ok(Some(auth)) => auth,
-        Ok(None) => smallauncher_lib::auth::auth_offline("test_idk"),
+        Ok(None) => saturn_launcher::auth::auth_offline("offline_player"),
         Err(e) => {
             println!("Failed to load authentication: {:?}", e);
             return;
         }
     };
 
-    match smallauncher_lib::launch::launch_minecraft_version(&game_path, &jre_path, &version, &auth)
-    {
-        Ok(_) => println!("Game launched successfully."),
-        Err(e) => println!("Failed to launch game: {:?}", e),
+    if !instance.exists() {
+        download(version);
     }
-}
 
-#[tauri::command]
-fn list_versions() {
-    let base_path = env::get_data_folder().expect("error get folder game");
-    let game_path = path!(&base_path, "minecraft");
-    match smallauncher_lib::launch::list_versions(&game_path) {
-        Ok(list) => {
-            if !list.is_empty() {
-                for version in list {
-                    println!("{version}");
-                }
-            } else {
-                println!("No installed versions found.");
-            }
-        }
-        Err(smallauncher_lib::error::Error::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => {
-            println!("No installed versions found. The versions directory does not exist.");
-        }
-        Err(e) => println!("Error listing versions: {:?}", e),
-    }
+    saturn_launcher::launch::launch_minecraft_version(
+        &instance,
+        &jre_path,
+        &format!("{version}-fabric"),
+        &auth,
+    )
+    .unwrap()
 }
 
 #[tauri::command]
 fn list_accounts() -> Vec<String> {
     let base_path = env::get_data_folder().expect("error get folder game");
-    let auth_path = path!(&base_path, "auth");
+    let auth_path = base_path.join("auth");
+
+    if !auth_path.exists() {
+        fs::create_dir_all(&auth_path).unwrap();
+    }
 
     match std::fs::read_dir(auth_path) {
         Ok(dir) => dir
@@ -129,7 +141,6 @@ pub fn run() {
             download,
             check_version,
             launch_minecraft,
-            list_versions,
             list_accounts,
         ])
         .run(tauri::generate_context!())
